@@ -18,7 +18,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /usr/local/bin/
 # Install Python and build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    python3 \
+    python3.11 \
     git \
     build-essential && \
     apt-get clean && \
@@ -29,7 +29,7 @@ COPY pyproject.toml uv.lock /builder/
 
 # Install Python dependencies into /usr/local for multi-stage copy
 ENV UV_PROJECT_ENVIRONMENT=/usr/local
-RUN ln -sf /usr/bin/python3 /usr/local/bin/python3 && \
+RUN ln -sf /usr/bin/python3.11 /usr/local/bin/python3 && \
     uv sync --frozen --group inference --no-dev --no-editable
 
 COPY ./app /builder/app/
@@ -42,7 +42,7 @@ COPY --from=builder /usr/local /usr/local
 RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
-    python3 && \
+    python3.11 && \
     rm -rf /var/lib/apt/lists/*
 
 ARG DOCKER_USER=1000
