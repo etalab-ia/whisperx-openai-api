@@ -2,7 +2,7 @@
 name = "whisper-openai-api"
 version = "1.2.0"
 description = "Whisper OpenAI API"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
     "openai==1.43.0",
@@ -21,6 +21,7 @@ inference = [
     "numpy>=2.1.0",
     "transformers>=4.48.0",
     "whisperx==3.8.5",
+    "tiktoken==0.12.0"
 ]
 # Helper libraries for dev
 dev = [
