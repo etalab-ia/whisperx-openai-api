@@ -21,6 +21,7 @@ inference = [
     "numpy>=2.1.0",
     "transformers>=4.48.0",
     "whisperx==3.8.5",
+    "tiktoken==0.12.0"
 ]
 # Helper libraries for dev
 dev = [
