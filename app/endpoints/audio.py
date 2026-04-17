@@ -4,6 +4,8 @@ import tempfile
 import time
 from typing import Annotated, Optional
 
+import numpy as np
+import tiktoken
 from fastapi import (
     APIRouter,
     Depends,
@@ -16,7 +18,7 @@ from fastapi import (
 from services.transcription import transcribe
 import whisperx
 
-from schemas.audio import AudioTranscription
+from schemas.audio import AudioTranscription, InputTokenDetails, Segment, Usage
 from utils.config import Settings, get_settings
 from utils.exceptions import ModelNotFoundException
 from utils.security import check_api_key
@@ -25,6 +27,44 @@ logger = logging.getLogger("api")
 
 router = APIRouter()
 
+WHISPERX_SAMPLE_RATE = 16_000
+AUDIO_TOKENS_PER_SECOND = 10
+
+
+SUPPORTED_RESPONSE_FORMATS = {"json", "diarized_json"}
+
+
+def _build_response(result: dict, audio: np.ndarray, is_diarize: bool) -> AudioTranscription:
+    raw_segments = result.get("segments", [])
+    text = "".join(seg["text"] for seg in raw_segments)
+
+    audio_tokens = round(len(audio) / WHISPERX_SAMPLE_RATE * AUDIO_TOKENS_PER_SECOND)
+    output_tokens = len(tiktoken.get_encoding("o200k_base").encode(text))
+
+    segments = None
+    if is_diarize:
+        segments = [
+            Segment(
+                id=f"seg_{i}",
+                text=seg["text"],
+                start=seg["start"],
+                end=seg["end"],
+                speaker=seg.get("speaker"),
+            )
+            for i, seg in enumerate(raw_segments)
+        ]
+
+    return AudioTranscription(
+        text=text,
+        segments=segments,
+        usage=Usage(
+            input_tokens=audio_tokens,
+            input_token_details=InputTokenDetails(audio_tokens=audio_tokens),
+            output_tokens=output_tokens,
+            total_tokens=audio_tokens + output_tokens,
+        ),
+    )
+
 
 @router.post("/audio/transcriptions", dependencies=[Security(check_api_key)])
 async def audio_transcriptions(
@@ -32,15 +72,21 @@ async def audio_transcriptions(
     file: UploadFile = File(...),
     model: Optional[str] = Form(None),
     language: Optional[str] = Form(None),
-    is_diarize: bool = Form(False),
+    response_format: str = Form("json"),
 ) -> AudioTranscription:
     """
-    Audio transcription API (custom implementation).
-
-    /!\ Note: This endpoint is **not** OpenAI API compatible.
-    The response format does not follow the OpenAI specification.
+    Audio transcription API compatible with the OpenAI transcription response format.
+    Supported response_format values: "json" (default), "is_diarized_json".
     """
-    logger.info("Request received. transcribe model: %s, language: %s", model, language)
+    logger.info("Request received. Transcribe model: %s, language: %s", model, language)
+
+    if response_format not in SUPPORTED_RESPONSE_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported response_format '{response_format}'. Must be one of: {sorted(SUPPORTED_RESPONSE_FORMATS)}.",
+        )
+
+    is_diarize = response_format == "diarized_json"
 
     if language is not None and language not in whisperx.utils.LANGUAGES:
         raise HTTPException(
@@ -76,6 +122,6 @@ async def audio_transcriptions(
     audio = whisperx.load_audio(temp_file_path)
     os.remove(temp_file_path)
 
-    result = transcribe(audio, settings, language, diarize=is_diarize)
+    result = transcribe(audio, settings, language, is_diarize=is_diarize)
 
-    return AudioTranscription(**result)
+    return _build_response(result, audio, is_diarize=is_diarize)

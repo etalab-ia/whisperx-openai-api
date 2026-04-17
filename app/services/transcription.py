@@ -13,11 +13,11 @@ def transcribe(
     audio: np.ndarray,
     settings: Settings,
     language: str | None = None,
-    diarize: bool = False,
+    is_diarize: bool = False,
 ) -> dict:
     """Run the transcription pipeline: transcribe, and optionally diarize."""
     result = _transcribe_audio(audio, settings, language)
-    if diarize:
+    if is_diarize:
         result = _align_transcription(audio, result, settings)
         result = _diarize_and_assign_speakers(audio, result, settings)
     return result
