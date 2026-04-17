@@ -10,14 +10,13 @@ from fastapi import (
     File,
     Form,
     HTTPException,
-    Request,
     Security,
     UploadFile,
 )
 from services.transcription import transcribe
 import whisperx
 
-from schemas.audio import AudioTranscription, AudioTranscriptionVerbose
+from schemas.audio import AudioTranscription
 from utils.config import Settings, get_settings
 from utils.exceptions import ModelNotFoundException
 from utils.security import check_api_key
@@ -27,15 +26,14 @@ logger = logging.getLogger("api")
 router = APIRouter()
 
 
-@router.post("/audio/transcriptions")
+@router.post("/audio/transcriptions", dependencies=[Security(check_api_key)])
 async def audio_transcriptions(
-    request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
     file: UploadFile = File(...),
     model: Optional[str] = Form(None),
-    api_key=Security(check_api_key),
     language: Optional[str] = Form(None),
-) -> AudioTranscription | AudioTranscriptionVerbose:
+    is_diarize: bool = Form(False),
+) -> AudioTranscription:
     """
     Audio transcription API (custom implementation).
 
@@ -44,12 +42,12 @@ async def audio_transcriptions(
     """
     logger.info("Request received. transcribe model: %s, language: %s", model, language)
 
-    if language is not None and (language not in whisperx.utils.LANGUAGES):
+    if language is not None and language not in whisperx.utils.LANGUAGES:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported language '{language}' for transcription.",
         )
-    if language is not None and language not in (
+    if is_diarize and language is not None and language not in (
         whisperx.alignment.DEFAULT_ALIGN_MODELS_HF
         | whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH
     ):
@@ -78,6 +76,6 @@ async def audio_transcriptions(
     audio = whisperx.load_audio(temp_file_path)
     os.remove(temp_file_path)
 
-    result = transcribe(audio, settings, language)
+    result = transcribe(audio, settings, language, diarize=is_diarize)
 
     return AudioTranscription(**result)
