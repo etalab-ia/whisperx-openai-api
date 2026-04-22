@@ -75,4 +75,8 @@ COPY --chown=whisperuser:whisperuser ./logging-config.yaml /app/logging-config.y
 
 USER whisperuser
 
-CMD ["python3", "main.py"]
+CMD gunicorn main:app \
+    --workers ${WORKERS:-1} \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --timeout 120 \
+    --bind 0.0.0.0:${PORT:-8000}
