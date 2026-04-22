@@ -39,4 +39,5 @@ if __name__ == "__main__":
         log_config=settings.logging_config,
         reload=settings.reload,
         timeout_keep_alive=settings.timeout_keep_alive,
+        workers=settings.workers,
     )

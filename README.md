@@ -61,6 +61,7 @@ Check the [documentation to run integration tests](docs/testing_with_gpu.md) on 
 | FILL_NEAREST | Fill nearest gaps in speaker assignment (diarization only) | `false` |
 | TIMEOUT_KEEP_ALIVE | Keep-alive timeout (seconds) | `60` |
 | PORT | Server port | `8000` |
+| WORKERS | Number of uvicorn workers (each loads its own model in VRAM) | `1` |
 | RELOAD | Enable auto-reload | `false` |
 | ROOT_PATH | API root path | `None` |
 | LOGGING_CONFIG | Path to logging config file | `None` |

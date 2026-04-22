@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     fill_nearest: bool = False
 
     port: int = 8000
+    workers: int = 1
     reload: bool = False
     root_path: str | None = None
     logging_config: str | None = "logging-config.yaml"
