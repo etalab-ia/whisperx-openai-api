@@ -51,13 +51,15 @@ Check the [documentation to run integration tests](docs/testing_with_gpu.md) on 
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | API_KEY | API key for API access | Required |
-| HF_TOKEN | Hugging Face token | Required |
+| HF_TOKEN | Hugging Face token (required for diarization) | Required |
+| TRANSCRIBE_MODEL | WhisperX model to load | `large-v2` |
 | BATCH_SIZE | Transcription batch size | `16` |
-| MODEL | WhisperX model to load | `large-v2` |
+| DIARIZE_MODEL | Pyannote diarization model | `pyannote/speaker-diarization-community-1` |
+| PRELOADED_ALIGN_MODEL_LANGUAGES | Languages to pre-load alignment models for | `["en", "fr", "nl", "de"]` |
+| RETURN_CHAR_ALIGNMENTS | Return character-level alignments (diarization only) | `false` |
+| INTERPOLATE_METHOD | WhisperX interpolation method (diarization only) | `nearest` |
+| FILL_NEAREST | Fill nearest gaps in speaker assignment (diarization only) | `false` |
 | TIMEOUT_KEEP_ALIVE | Keep-alive timeout (seconds) | `60` |
-| RETURN_CHAR_ALIGNMENTS | Return character-level alignments | `false` |
-| INTERPOLATE_METHOD | WhisperX interpolation method | `nearest` |
-| FILL_NEAREST | Fill nearest gaps in alignment | `false` |
 | PORT | Server port | `8000` |
 | RELOAD | Enable auto-reload | `false` |
 | ROOT_PATH | API root path | `None` |
