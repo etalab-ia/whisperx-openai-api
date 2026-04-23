@@ -1,11 +1,18 @@
+import logging
+import logging.config
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
 import uvicorn
+import yaml
 
 from endpoints import audio, models, monitoring
 from utils.config import Settings, get_settings, settings
 from utils.lifespan import lifespan
+
+if settings.logging_config:
+    with open(settings.logging_config) as f:
+        logging.config.dictConfig(yaml.safe_load(f))
 
 # Setup FastAPI
 app = FastAPI(

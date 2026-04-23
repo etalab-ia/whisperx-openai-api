@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import os
 import tempfile
 import time
+from functools import partial
 from typing import Annotated, Optional
 
 import numpy as np
@@ -16,6 +18,7 @@ from fastapi import (
     UploadFile,
 )
 from services.transcription import transcribe
+from utils.lifespan import gpu_executor
 import whisperx
 
 from schemas.audio import AudioTranscription, InputTokenDetails, Segment, Usage
@@ -122,6 +125,9 @@ async def audio_transcriptions(
     audio = whisperx.load_audio(temp_file_path)
     os.remove(temp_file_path)
 
-    result = transcribe(audio, settings, language, is_diarize=is_diarize)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        gpu_executor, partial(transcribe, audio, settings, language, is_diarize=is_diarize)
+    )
 
     return _build_response(result, audio, is_diarize=is_diarize)
