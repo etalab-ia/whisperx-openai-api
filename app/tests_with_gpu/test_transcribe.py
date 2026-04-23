@@ -37,9 +37,11 @@ class TestTranscribeIntegration:
         response = integration_client.post(
             ENDPOINT,
             files={"file": ("sample_en_1.ogg", sample_ogg, "audio/ogg")},
+            data={"response_format": "diarized_json"},
         )
 
         assert response.status_code == 200
         body = response.json()
 
+        assert body["text"] == expected_output["text"]
         assert body["segments"] == expected_output["segments"]

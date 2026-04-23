@@ -33,6 +33,36 @@ export LOGGING_CONFIG=logging-config.yaml
 python app/main.py
 ```
 
+## Deployment
+
+### Build the image
+
+```bash
+docker build -f app/Dockerfile -t whisperx-openai-api .
+```
+
+### Run
+
+```bash
+docker run -d \
+  --gpus all \
+  -p 8000:8000 \
+  -e API_KEY=your-api-key \
+  -e HF_TOKEN=your-hf-token \
+  -v /path/to/models:/data/models \
+  whisperx-openai-api
+```
+
+Models are downloaded on first startup and cached in `/data/models`. Mount a persistent volume to avoid re-downloading on restart.
+
+**1 worker is recommended.** GPU inference is serialized internally : multiple workers each load a full model copy in VRAM, and it doesn't improve throughput unless you have multiple GPUs.
+
+To scale workers (each worker loads its own model in VRAM):
+
+```bash
+docker run -d --gpus all ... -e WORKERS=2 whisperx-openai-api
+```
+
 ## Testing
 
 Tests mock actual inference and can be run locally:
@@ -52,7 +82,7 @@ Check the [documentation to run integration tests](docs/testing_with_gpu.md) on 
 | -------- | ----------- | ------- |
 | API_KEY | API key for API access | Required |
 | HF_TOKEN | Hugging Face token (required for diarization) | Required |
-| TRANSCRIBE_MODEL | WhisperX model to load | `large-v2` |
+| TRANSCRIBE_MODEL | WhisperX model to load | `large-v3-turbo` |
 | BATCH_SIZE | Transcription batch size | `16` |
 | DIARIZE_MODEL | Pyannote diarization model | `pyannote/speaker-diarization-community-1` |
 | PRELOADED_ALIGN_MODEL_LANGUAGES | Languages to pre-load alignment models for | `["en", "fr", "nl", "de"]` |
@@ -64,6 +94,6 @@ Check the [documentation to run integration tests](docs/testing_with_gpu.md) on 
 | WORKERS | Number of uvicorn workers (each loads its own model in VRAM) | `1` |
 | RELOAD | Enable auto-reload | `false` |
 | ROOT_PATH | API root path | `None` |
-| LOGGING_CONFIG | Path to logging config file | `None` |
+| LOGGING_CONFIG | Path to logging config file | `logging-config.yaml` |
 | DEBUG | Enable debug logging | `false` |
 

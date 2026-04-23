@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     app_version: str = "0.0.0"
 
     batch_size: int = 16
-    transcribe_model: str = "large-v2"
+    transcribe_model: str = "large-v3-turbo"
     diarize_model: str = "pyannote/speaker-diarization-community-1"
     preloaded_align_model_languages: list[str] = ["en", "fr", "nl", "de"]
     timeout_keep_alive: int = 60

@@ -20,7 +20,7 @@ class Pipelines:
 
 pipelines = Pipelines()
 
-# Single-threaded executor: GPU inference runs off the event loop without contention
+# GPU inferences serialized (one by one)
 gpu_executor = ThreadPoolExecutor(max_workers=1)
 
 
@@ -44,7 +44,6 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    gpu_executor.shutdown(wait=False)
     pipelines.transcribe_model = None
     pipelines.diarize_model = None
     pipelines.align_models.clear()
