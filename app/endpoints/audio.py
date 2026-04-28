@@ -17,6 +17,7 @@ from fastapi import (
     Security,
     UploadFile,
 )
+from fastapi.responses import PlainTextResponse
 from services.transcription import transcribe
 from utils.lifespan import gpu_executor
 import whisperx
@@ -34,7 +35,7 @@ WHISPERX_SAMPLE_RATE = 16_000
 AUDIO_TOKENS_PER_SECOND = 10
 
 
-SUPPORTED_RESPONSE_FORMATS = {"json", "diarized_json"}
+SUPPORTED_RESPONSE_FORMATS = {"json", "text", "diarized_json"}
 
 
 def _build_response(result: dict, audio: np.ndarray, is_diarize: bool) -> AudioTranscription:
@@ -79,7 +80,7 @@ async def audio_transcriptions(
 ) -> AudioTranscription:
     """
     Audio transcription API compatible with the OpenAI transcription response format.
-    Supported response_format values: "json" (default), "is_diarized_json".
+    Supported response_format values: "json" (default), "text", "diarized_json".
     """
     logger.info("Request received. Transcribe model: %s, language: %s", model, language)
 
@@ -90,6 +91,7 @@ async def audio_transcriptions(
         )
 
     is_diarize = response_format == "diarized_json"
+    is_text = response_format == "text"
 
     if language is not None and language not in whisperx.utils.LANGUAGES:
         raise HTTPException(
@@ -129,5 +131,9 @@ async def audio_transcriptions(
     result = await loop.run_in_executor(
         gpu_executor, partial(transcribe, audio, settings, language, is_diarize=is_diarize)
     )
+
+    if is_text:
+        text = "".join(seg["text"] for seg in result.get("segments", []))
+        return PlainTextResponse(content=text)
 
     return _build_response(result, audio, is_diarize=is_diarize)

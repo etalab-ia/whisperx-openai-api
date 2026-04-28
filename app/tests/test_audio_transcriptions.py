@@ -27,6 +27,17 @@ def test_diarized(client):
     assert body["segments"][0]["speaker"] == "SPEAKER_00"
 
 
+def test_text(client):
+    response = post(client, response_format="text")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    assert response.text == "Hello world."
+
+
+def test_unsupported_format_returns_400(client):
+    assert post(client, response_format="srt").status_code == 400
+
+
 def test_wrong_model_returns_404(client):
     assert post(client, model="tiny").status_code == 404
 
