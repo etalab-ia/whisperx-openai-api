@@ -49,8 +49,8 @@ docker run -d \
   -p 8000:8000 \
   -e API_KEY=your-api-key \
   -e HF_TOKEN=your-hf-token \
-  -v /path/to/models:/data/models \
-  whisperx-openai-api
+  -v /data/models:/data/models \
+  ghcr.io/etalab-ia/whisperx-openai-api:latest
 ```
 
 Models are downloaded on first startup and cached in `/data/models`. Mount a persistent volume to avoid re-downloading on restart.
