@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     app_name: str = "whisperx-api"
     app_version: str = "0.0.0"
 
-    batch_size: int = 16
+    batch_size: int = 32
     transcribe_model: str = "large-v3-turbo"
     diarize_model: str = "pyannote/speaker-diarization-community-1"
     preloaded_align_model_languages: list[str] = ["en", "fr", "nl", "de"]
