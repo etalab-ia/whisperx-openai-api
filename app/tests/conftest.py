@@ -38,6 +38,7 @@ from utils.config import Settings, get_settings  # noqa: E402
 from utils.security import check_api_key  # noqa: E402
 
 FAKE_TRANSCRIPTION = {
+    "language": "en",
     "segments": [{"start": 0.0, "end": 1.5, "text": "Hello world.", "speaker": "SPEAKER_00"}],
 }
 

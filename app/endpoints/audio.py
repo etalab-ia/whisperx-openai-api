@@ -64,7 +64,9 @@ def _format_vtt(segments: list[dict]) -> str:
     return "\n\n".join(blocks) + "\n"
 
 
-def _build_response(result: dict, audio: np.ndarray, include_segments: bool) -> AudioTranscription:
+def _build_response(
+    result: dict, audio: np.ndarray, is_diarize: bool, is_verbose: bool
+) -> AudioTranscription:
     raw_segments = result.get("segments", [])
     text = "".join(seg["text"] for seg in raw_segments)
 
@@ -72,7 +74,7 @@ def _build_response(result: dict, audio: np.ndarray, include_segments: bool) -> 
     output_tokens = len(tiktoken.get_encoding("o200k_base").encode(text))
 
     segments = None
-    if include_segments:
+    if is_diarize or is_verbose:
         segments = [
             Segment(
                 id=f"seg_{i}",
@@ -85,6 +87,9 @@ def _build_response(result: dict, audio: np.ndarray, include_segments: bool) -> 
         ]
 
     return AudioTranscription(
+        task="transcribe" if is_verbose else None,
+        language=result.get("language") if is_verbose else None,
+        duration=len(audio) / WHISPERX_SAMPLE_RATE if is_verbose else None,
         text=text,
         segments=segments,
         usage=Usage(
@@ -170,4 +175,4 @@ async def audio_transcriptions(
     if is_vtt:
         return PlainTextResponse(content=_format_vtt(segments), media_type="text/vtt")
 
-    return _build_response(result, audio, include_segments=is_diarize or is_verbose)
+    return _build_response(result, audio, is_diarize=is_diarize, is_verbose=is_verbose)

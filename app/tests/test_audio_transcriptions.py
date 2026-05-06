@@ -19,17 +19,26 @@ def test_transcription(client):
     body = post(client).json()
     assert body["text"] == "Hello world."
     assert body["segments"] is None
+    assert body["task"] is None
+    assert body["language"] is None
+    assert body["duration"] is None
 
 
 def test_diarized(client):
     body = post(client, response_format="diarized_json").json()
     assert body["segments"][0]["text"] == "Hello world."
     assert body["segments"][0]["speaker"] == "SPEAKER_00"
+    assert body["task"] is None
+    assert body["language"] is None
+    assert body["duration"] is None
 
 
 def test_verbose_json(client):
     body = post(client, response_format="verbose_json").json()
     assert body["text"] == "Hello world."
+    assert body["task"] == "transcribe"
+    assert body["language"] == "en"
+    assert body["duration"] is not None
     assert body["segments"][0]["text"] == "Hello world."
     assert body["segments"][0]["start"] == 0.0
     assert body["segments"][0]["end"] == 1.5
