@@ -34,8 +34,22 @@ def test_text(client):
     assert response.text == "Hello world."
 
 
+def test_srt(client):
+    response = post(client, response_format="srt")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/x-subrip")
+    assert response.text == "1\n00:00:00,000 --> 00:00:01,500\nHello world.\n"
+
+
+def test_vtt(client):
+    response = post(client, response_format="vtt")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/vtt")
+    assert response.text == "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nHello world.\n"
+
+
 def test_unsupported_format_returns_400(client):
-    assert post(client, response_format="srt").status_code == 400
+    assert post(client, response_format="bogus").status_code == 400
 
 
 def test_wrong_model_returns_404(client):

@@ -35,7 +35,33 @@ WHISPERX_SAMPLE_RATE = 16_000
 AUDIO_TOKENS_PER_SECOND = 10
 
 
-SUPPORTED_RESPONSE_FORMATS = {"json", "text", "diarized_json"}
+SUPPORTED_RESPONSE_FORMATS = {"json", "text", "diarized_json", "srt", "vtt"}
+
+
+def _format_timestamp(seconds: float, separator: str) -> str:
+    ms = round(seconds * 1000)
+    hours, ms = divmod(ms, 3_600_000)
+    minutes, ms = divmod(ms, 60_000)
+    secs, ms = divmod(ms, 1000)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}{separator}{ms:03d}"
+
+
+def _format_srt(segments: list[dict]) -> str:
+    blocks = []
+    for i, seg in enumerate(segments, start=1):
+        start = _format_timestamp(seg["start"], ",")
+        end = _format_timestamp(seg["end"], ",")
+        blocks.append(f"{i}\n{start} --> {end}\n{seg['text'].strip()}")
+    return "\n\n".join(blocks) + "\n"
+
+
+def _format_vtt(segments: list[dict]) -> str:
+    blocks = ["WEBVTT"]
+    for seg in segments:
+        start = _format_timestamp(seg["start"], ".")
+        end = _format_timestamp(seg["end"], ".")
+        blocks.append(f"{start} --> {end}\n{seg['text'].strip()}")
+    return "\n\n".join(blocks) + "\n"
 
 
 def _build_response(result: dict, audio: np.ndarray, is_diarize: bool) -> AudioTranscription:
@@ -80,7 +106,7 @@ async def audio_transcriptions(
 ) -> AudioTranscription:
     """
     Audio transcription API compatible with the OpenAI transcription response format.
-    Supported response_format values: "json" (default), "text", "diarized_json".
+    Supported response_format values: "json" (default), "text", "diarized_json", "srt", "vtt".
     """
     logger.info("Request received. Transcribe model: %s, language: %s", model, language)
 
@@ -92,6 +118,8 @@ async def audio_transcriptions(
 
     is_diarize = response_format == "diarized_json"
     is_text = response_format == "text"
+    is_srt = response_format == "srt"
+    is_vtt = response_format == "vtt"
 
     if language is not None and language not in whisperx.utils.LANGUAGES:
         raise HTTPException(
@@ -132,8 +160,13 @@ async def audio_transcriptions(
         gpu_executor, partial(transcribe, audio, settings, language, is_diarize=is_diarize)
     )
 
+    segments = result.get("segments", [])
+
     if is_text:
-        text = "".join(seg["text"] for seg in result.get("segments", []))
-        return PlainTextResponse(content=text)
+        return PlainTextResponse(content="".join(seg["text"] for seg in segments))
+    if is_srt:
+        return PlainTextResponse(content=_format_srt(segments), media_type="application/x-subrip")
+    if is_vtt:
+        return PlainTextResponse(content=_format_vtt(segments), media_type="text/vtt")
 
     return _build_response(result, audio, is_diarize=is_diarize)
