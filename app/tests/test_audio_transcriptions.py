@@ -27,6 +27,14 @@ def test_diarized(client):
     assert body["segments"][0]["speaker"] == "SPEAKER_00"
 
 
+def test_verbose_json(client):
+    body = post(client, response_format="verbose_json").json()
+    assert body["text"] == "Hello world."
+    assert body["segments"][0]["text"] == "Hello world."
+    assert body["segments"][0]["start"] == 0.0
+    assert body["segments"][0]["end"] == 1.5
+
+
 def test_text(client):
     response = post(client, response_format="text")
     assert response.status_code == 200

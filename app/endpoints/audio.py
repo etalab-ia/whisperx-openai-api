@@ -35,7 +35,7 @@ WHISPERX_SAMPLE_RATE = 16_000
 AUDIO_TOKENS_PER_SECOND = 10
 
 
-SUPPORTED_RESPONSE_FORMATS = {"json", "text", "diarized_json", "srt", "vtt"}
+SUPPORTED_RESPONSE_FORMATS = {"json", "text", "verbose_json", "diarized_json", "srt", "vtt"}
 
 
 def _format_timestamp(seconds: float, separator: str) -> str:
@@ -64,7 +64,7 @@ def _format_vtt(segments: list[dict]) -> str:
     return "\n\n".join(blocks) + "\n"
 
 
-def _build_response(result: dict, audio: np.ndarray, is_diarize: bool) -> AudioTranscription:
+def _build_response(result: dict, audio: np.ndarray, include_segments: bool) -> AudioTranscription:
     raw_segments = result.get("segments", [])
     text = "".join(seg["text"] for seg in raw_segments)
 
@@ -72,7 +72,7 @@ def _build_response(result: dict, audio: np.ndarray, is_diarize: bool) -> AudioT
     output_tokens = len(tiktoken.get_encoding("o200k_base").encode(text))
 
     segments = None
-    if is_diarize:
+    if include_segments:
         segments = [
             Segment(
                 id=f"seg_{i}",
@@ -106,7 +106,7 @@ async def audio_transcriptions(
 ) -> AudioTranscription:
     """
     Audio transcription API compatible with the OpenAI transcription response format.
-    Supported response_format values: "json" (default), "text", "diarized_json", "srt", "vtt".
+    Supported response_format values: "json" (default), "text", "verbose_json", "diarized_json", "srt", "vtt".
     """
     logger.info("Request received. Transcribe model: %s, language: %s", model, language)
 
@@ -117,6 +117,7 @@ async def audio_transcriptions(
         )
 
     is_diarize = response_format == "diarized_json"
+    is_verbose = response_format == "verbose_json"
     is_text = response_format == "text"
     is_srt = response_format == "srt"
     is_vtt = response_format == "vtt"
@@ -169,4 +170,4 @@ async def audio_transcriptions(
     if is_vtt:
         return PlainTextResponse(content=_format_vtt(segments), media_type="text/vtt")
 
-    return _build_response(result, audio, is_diarize=is_diarize)
+    return _build_response(result, audio, include_segments=is_diarize or is_verbose)
