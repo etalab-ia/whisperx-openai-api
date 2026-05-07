@@ -77,7 +77,7 @@ def _build_response(
     if is_diarize or is_verbose:
         segments = [
             Segment(
-                id=f"seg_{i}",
+                id=i,
                 text=seg["text"],
                 start=seg["start"],
                 end=seg["end"],

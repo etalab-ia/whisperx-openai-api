@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 class Segment(BaseModel):
-    id: str
+    id: int
     type: str = "transcript.text.segment"
     text: str
     start: float
